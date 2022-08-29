@@ -1,119 +1,151 @@
-import { useCallback } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { useState } from 'react';
 import {
-  Center,
-  Flex,
+  FormControl,
+  FormLabel,
   Stack,
-  Box,
-  Heading,
-  Text,
   Button,
-  useColorModeValue,
-  Icon,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
-  useDisclosure,
+  Input,
+  Box,
+  Flex,
+  Center,
+  useToast,
+  Heading,
+  Container,
 } from '@chakra-ui/react';
-import { AiFillFileAdd } from 'react-icons/ai';
 
-const Upload = ({ onFileAccepted }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+import { storage } from '../firebase';
+import {
+  getDownloadURL,
+  getMetadata,
+  listAll,
+  ref,
+  uploadBytesResumable,
+} from 'firebase/storage';
+import { useAuth } from '../AuthContext';
 
-  const onDrop = useCallback(
-    acceptedFiles => {
-      onFileAccepted(acceptedFiles[0]);
-    },
-    [onFileAccepted]
-  );
+const Upload = () => {
+  const { user } = useAuth();
+  const toast = useToast();
+  const [fileState, setFileState] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: '.jpg',
-    maxFiles: 1,
-    multiple: false,
-  });
+  const fileTypes = [
+    'image/png',
+    'image/jpeg',
+    'application/pdf',
+    'text/plain',
+  ];
 
-  const dropText = isDragActive
-    ? 'Drop Files Here'
-    : 'Drag & Drop Files to Upload';
+  const showToast = (type, err) => {
+    toast({
+      title: `${err}`,
+      position: 'top-right',
+      isClosable: true,
+      status: `${type}`,
+      duration: '2500',
+    });
+  };
 
-  const activeBg = useColorModeValue('gray.100', 'gray.600');
-  const borderColor = useColorModeValue(
-    isDragActive ? 'teal.300' : 'gray.300',
-    isDragActive ? 'teal.500' : 'gray.500'
-  );
+  const fileChange = e => {
+    e.preventDefault();
+
+    console.log(e.target.files);
+    if (e.target.files.length != 0) setFileState(true);
+    else setFileState(false);
+  };
+
+  const handleSubmit = e => {
+    e.preventDefault();
+
+    let file = e.target[0].files[0];
+    if (!file) {
+      setFileState(false);
+
+      showToast('error', 'No File Selected');
+      return;
+    } else if (!fileTypes.includes(file.type)) {
+      setFileState(false);
+
+      showToast('error', 'Invalid File Type');
+      return;
+    }
+    uploadFile(file);
+    setLoading(true);
+    e.target.reset();
+  };
+
+  const uploadFile = currFile => {
+    if (!currFile) return;
+
+    const storageRef = ref(storage, `/${user.uid}/${currFile.name}`);
+
+    getDownloadURL(storageRef)
+      .then(() => {
+        showToast('error', 'File Already Exists');
+        setLoading(false);
+        return;
+      })
+      .catch(() => {
+        const uploadTask = uploadBytesResumable(storageRef, currFile);
+
+        uploadTask.on(
+          'state_changed',
+          snapshot => {
+            return;
+          },
+          err => {
+            showToast(err.code);
+          },
+          () => {
+            getDownloadURL(uploadTask.snapshot.ref)
+              .then(url => {
+                console.log(url);
+                showToast('success', 'File Uploaded');
+                setFileState(false);
+                setLoading(false);
+              })
+              .catch(err => {
+                showToast('error', err.code);
+              });
+          }
+        );
+      });
+  };
 
   return (
-    <Flex>
-      <Button onClick={onOpen}>Upload File</Button>
-
-      <Modal
-        isOpen={isOpen}
-        size={'5xl'}
-        onClose={onClose}
-        rounded={10}
-        isCentered
-      >
-        <ModalOverlay />
-
-        <ModalContent bg={'red.200'} p={6}>
-          <ModalHeader>
-            <ModalCloseButton />
-          </ModalHeader>
-          <Center
-            h={[300, 450, 500, 600]}
-            bg={isDragActive ? activeBg : 'gray.50'}
-            rounded={10}
-            boxShadow={'lg'}
-            _hover={{ bg: activeBg }}
-            border="3px dashed"
-            transition="background-color 0.2s ease"
-            borderRadius={4}
-            borderColor={borderColor}
+    <Center>
+      <form onSubmit={handleSubmit}>
+        <Stack direction={'row'} align="center" my={4}>
+          <Button
+            as={FormLabel}
+            cursor="pointer"
+            colorScheme={!fileState ? 'blue' : 'green'}
+            w={48}
+            h={14}
+            mt={2}
           >
-            <Stack direction={'column'}>
-              <Heading color={'black'}>{dropText}</Heading>
-              <Center>
-                <Text>{!isDragActive && 'Or Browse Files'}</Text>
-              </Center>
-            </Stack>
-          </Center>
-          {/* <ModalHeader>Modal Title</ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>Test</ModalBody>
-
-          <ModalFooter>
-            <Center>
-              <Button colorScheme="green" mr={3} onClick={onClose}>
-                Upload
-              </Button>
-            </Center>
-          </ModalFooter> */}
-        </ModalContent>
-      </Modal>
-    </Flex>
+            <Input
+              type="file"
+              accept={fileTypes.join(',')}
+              onChange={fileChange}
+              multiple={false}
+              hidden
+            />
+            {!fileState ? 'Select File' : 'File Selected'}
+          </Button>
+          <Button
+            type="submit"
+            isLoading={loading}
+            loadingText={'Uploading'}
+            w={32}
+            h={14}
+          >
+            Upload
+          </Button>
+        </Stack>
+      </form>
+    </Center>
   );
 };
 
 export default Upload;
-
-// <Center
-// p={10}
-// cursor="pointer"
-// bg={isDragActive ? activeBg : 'transparent'}
-// _hover={{ bg: activeBg }}
-// transition="background-color 0.2s ease"
-// borderRadius={4}
-// border="3px dashed"
-// borderColor={borderColor}
-// {...getRootProps()}
-// >
-// <input {...getInputProps()} />
-// <Icon as={AiFillFileAdd} mr={2} />
-// <p>{dropText}</p>
-// </Center>
