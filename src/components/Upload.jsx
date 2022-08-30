@@ -1,27 +1,17 @@
 import { useState } from 'react';
 import {
-  FormControl,
   FormLabel,
   Stack,
   Button,
   Input,
-  Box,
-  Flex,
   Center,
   useToast,
-  Heading,
-  Container,
 } from '@chakra-ui/react';
 
-import { storage } from '../firebase';
-import {
-  getDownloadURL,
-  getMetadata,
-  listAll,
-  ref,
-  uploadBytesResumable,
-} from 'firebase/storage';
+import { storage, db } from '../firebase';
+import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { useAuth } from '../AuthContext';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 const Upload = () => {
   const { user } = useAuth();
@@ -49,7 +39,6 @@ const Upload = () => {
   const fileChange = e => {
     e.preventDefault();
 
-    console.log(e.target.files);
     if (e.target.files.length != 0) setFileState(true);
     else setFileState(false);
   };
@@ -74,41 +63,61 @@ const Upload = () => {
     e.target.reset();
   };
 
-  const uploadFile = currFile => {
+  const uploadFile = async currFile => {
     if (!currFile) return;
 
-    const storageRef = ref(storage, `/${user.uid}/${currFile.name}`);
+    const filePath = `/${user.uid}/${currFile.name}`;
+    const storageRef = ref(storage, filePath);
+    const fileDoc = doc(db, `${user.uid}/${currFile.name}`);
 
-    getDownloadURL(storageRef)
+    const fileSnapshot = await getDoc(fileDoc);
+
+    if (fileSnapshot.exists()) {
+      showToast('error', 'File Already Exists');
+      setFileState(false);
+      setLoading(false);
+      return;
+    } else {
+      const uploadTask = uploadBytesResumable(storageRef, currFile);
+
+      uploadTask.on(
+        'state_changed',
+        snapshot => {
+          return;
+        },
+        err => {
+          showToast('error', err.code);
+        },
+        () => {
+          getDownloadURL(uploadTask.snapshot.ref)
+            .then(fileURL => {
+              setFileData(fileDoc, currFile, fileURL);
+            })
+            .catch(err => {
+              showToast('error', err.code);
+            });
+        }
+      );
+    }
+  };
+
+  const setFileData = (fileDoc, currFile, fileURL) => {
+    const fileData = {
+      fileName: currFile.name,
+      fileSize: currFile.size,
+      filePath: `/${user.uid}/${currFile.name}`,
+      fileURL: fileURL,
+      fileDate: serverTimestamp(),
+    };
+
+    setDoc(fileDoc, fileData)
       .then(() => {
-        showToast('error', 'File Already Exists');
+        showToast('success', 'File Uploaded');
+        setFileState(false);
         setLoading(false);
-        return;
       })
-      .catch(() => {
-        const uploadTask = uploadBytesResumable(storageRef, currFile);
-
-        uploadTask.on(
-          'state_changed',
-          snapshot => {
-            return;
-          },
-          err => {
-            showToast(err.code);
-          },
-          () => {
-            getDownloadURL(uploadTask.snapshot.ref)
-              .then(url => {
-                console.log(url);
-                showToast('success', 'File Uploaded');
-                setFileState(false);
-                setLoading(false);
-              })
-              .catch(err => {
-                showToast('error', err.code);
-              });
-          }
-        );
+      .catch(err => {
+        showToast('error', err.code);
       });
   };
 
