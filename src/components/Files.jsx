@@ -1,47 +1,26 @@
-import { Flex, Stack, Heading, Center, Container } from '@chakra-ui/react';
+import { Flex, Stack, Heading, Center, Text } from '@chakra-ui/react';
 import Upload from './Upload';
 import Card from './Card';
 
-import { storage } from '../firebase';
-import { getDownloadURL, getMetadata, listAll, ref } from 'firebase/storage';
 import { useAuth } from '../AuthContext';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+
+import { db } from '../firebase';
+import { collection, onSnapshot, query } from 'firebase/firestore';
 
 const Files = () => {
   const { user } = useAuth();
+  const [cards, setCards] = useState();
 
-  // const getFileData = () => {
-  //   listAll(ref(storage, `${user.uid}`))
-  //     .then(res => {
-  //       res.items.forEach(file => {
-  //         getMetadata(file)
-  //           .then(data => {
-  //             getDownloadURL(ref(storage, data.fullPath))
-  //               .then(url => {
-  //                 return (
-  //                   <>
-  //                     <Card
-  //                       fileName={data.name}
-  //                       fileSize={data.size}
-  //                       filePath={data.fullPath}
-  //                       fileURL={url}
-  //                     />
-  //                   </>
-  //                 );
-  //               })
-  //               .catch(err => {
-  //                 console.log(err);
-  //               });
-  //           })
-  //           .catch(err => {
-  //             console.log(err);
-  //           });
-  //       });
-  //     })
-  //     .catch(err => {
-  //       console.log(err);
-  //     });
-  // };
+  useEffect(() => {
+    const dataQuery = query(collection(db, user.uid));
+
+    const unsubscribe = onSnapshot(dataQuery, snapshot => {
+      setCards(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+
+    return () => unsubscribe();
+  }, [user.uid]);
 
   return (
     <Stack direction={'column'}>
@@ -56,13 +35,29 @@ const Files = () => {
       </Center>
 
       <Center>
-        <Container
-          maxW={['sm', 'lg', '2xl', 'container.xl']}
-          // bg="green.400"
-        >
-          <Card fileName={'File 1'} fileSize="2.3 MB" />
-          <Card fileName={'File 2'} fileSize="1.2 MB" />
-        </Container>
+        <Stack maxW={['sm', 'lg', 'xl', 'container.lg', 'container.xl']}>
+          <Flex w={['sm', 'lg', '2xl', 'container.xl']}>
+            <Flex w={['51%', '33%', '', '', '38.5%']}>
+              <Text ml={4}>Name</Text>
+            </Flex>
+            <Flex w={['22.5%', '19%', '', '22.5%']}>
+              <Text ml={4}>Size</Text>
+            </Flex>
+            <Flex display={['none', 'none', 'flex', 'flex']}>
+              <Text ml={4}>Type</Text>
+            </Flex>
+          </Flex>
+
+          {cards?.map(data => (
+            <Card
+              fileName={data.fileName}
+              fileSize={data.fileSize}
+              filePath={data.filePath}
+              fileURL={data.fileURL}
+              key={data.id}
+            />
+          ))}
+        </Stack>
       </Center>
     </Stack>
   );
