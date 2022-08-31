@@ -5,7 +5,7 @@ import Card from './Card';
 import { useAuth } from '../AuthContext';
 import { useState, useEffect } from 'react';
 
-import { db } from '../firebase';
+import { firestore } from '../firebase';
 import { collection, onSnapshot, query } from 'firebase/firestore';
 
 const Files = () => {
@@ -13,7 +13,7 @@ const Files = () => {
   const [cards, setCards] = useState();
 
   useEffect(() => {
-    const dataQuery = query(collection(db, user.uid));
+    const dataQuery = query(collection(firestore, user.uid));
 
     const unsubscribe = onSnapshot(dataQuery, snapshot => {
       setCards(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -54,6 +54,7 @@ const Files = () => {
               fileSize={data.fileSize}
               filePath={data.filePath}
               fileURL={data.fileURL}
+              fileType={data.fileType}
               key={data.id}
             />
           ))}

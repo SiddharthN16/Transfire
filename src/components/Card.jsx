@@ -23,16 +23,16 @@ import {
 } from 'react-icons/io5';
 import { HiDotsHorizontal } from 'react-icons/hi';
 
-import { db, storage } from '../firebase';
-import { ref, deleteObject } from 'firebase/storage';
+import { firestore, storage } from '../firebase';
+import { ref, deleteObject, getBlob } from 'firebase/storage';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { useState } from 'react';
 
-const Card = ({ fileName, fileSize, filePath, fileURL }) => {
-  const [loading, setLoading] = useState(false);
+const Card = ({ fileName, fileSize, filePath, fileURL, fileType }) => {
+  const [delLoad, setDelLoad] = useState(false);
+  const [downLoad, setDownLoad] = useState(false);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
-
   const toast = useToast();
 
   const showToast = (type, err) => {
@@ -46,21 +46,39 @@ const Card = ({ fileName, fileSize, filePath, fileURL }) => {
   };
 
   const handleDelete = async () => {
-    setLoading(true);
+    setDelLoad(true);
 
     const fileRef = ref(storage, filePath);
-    const docRef = doc(db, filePath);
+    const docRef = doc(firestore, filePath);
 
     try {
       await deleteObject(fileRef);
       await deleteDoc(docRef);
 
-      setLoading(false);
+      setDelLoad(false);
       showToast('success', 'File Deleted');
     } catch (err) {
       showToast('error', err.code);
-      setLoading(false);
+      setDelLoad(false);
     }
+  };
+
+  const handleDownload = () => {
+    setDownLoad(true);
+    getBlob(ref(storage, filePath))
+      .then(blob => {
+        const file = document.createElement('a');
+        file.href = window.URL.createObjectURL(blob);
+        file.download = fileName;
+        file.style.display = 'none';
+        document.body.appendChild(file);
+        file.click();
+        setDownLoad(false);
+      })
+      .catch(err => {
+        console.log(err);
+        setDownLoad(false);
+      });
   };
 
   return (
@@ -78,8 +96,8 @@ const Card = ({ fileName, fileSize, filePath, fileURL }) => {
               </Text>
             </Flex>
             <Flex w={'35%'} align={'center'}>
-              <Text as={'b'} fontSize={[12, 14, 16, 18]} ml={[2, '0']}>
-                {fileSize}
+              <Text fontSize={[12, 14, 16, 18]} ml={[2, '0']}>
+                {fileSize} B
               </Text>
             </Flex>
             <Flex
@@ -87,9 +105,7 @@ const Card = ({ fileName, fileSize, filePath, fileURL }) => {
               align={'center'}
               display={['none', 'none', 'flex', 'flex']}
             >
-              <Text as={'b'} fontSize={[12, 14, 16, 18]}>
-                {fileSize}
-              </Text>
+              <Text fontSize={[12, 14, 16, 18]}>{fileType}</Text>
             </Flex>
 
             <Flex display={['none', 'none', 'flex', 'flex', 'flex']}>
@@ -101,12 +117,17 @@ const Card = ({ fileName, fileSize, filePath, fileURL }) => {
                   icon={<IoOpenOutline />}
                   isExternal
                 />
-                <IconButton colorScheme="blue" icon={<IoDownloadOutline />} />
+                <IconButton
+                  colorScheme="blue"
+                  onClick={handleDownload}
+                  icon={<IoDownloadOutline />}
+                  isLoading={downLoad}
+                />
                 <IconButton
                   colorScheme="red"
                   icon={<IoTrashOutline />}
                   onClick={handleDelete}
-                  isLoading={loading}
+                  isLoading={delLoad}
                 />
               </ButtonGroup>
             </Flex>
@@ -144,6 +165,9 @@ const Card = ({ fileName, fileSize, filePath, fileURL }) => {
                     mb={2}
                     colorScheme="blue"
                     leftIcon={<IoDownloadOutline />}
+                    onClick={handleDownload}
+                    isLoading={downLoad}
+                    loadingText="Downloading"
                   >
                     Download
                   </Button>
@@ -153,7 +177,7 @@ const Card = ({ fileName, fileSize, filePath, fileURL }) => {
                     colorScheme="red"
                     leftIcon={<IoTrashOutline />}
                     onClick={handleDelete}
-                    isLoading={loading}
+                    isLoading={delLoad}
                     loadingText="Deleting"
                   >
                     Delete

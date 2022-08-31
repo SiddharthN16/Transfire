@@ -42,15 +42,11 @@ const Navbar = () => {
       >
         {user ? (
           <>
-            <Button variant="ghost" as="a" href="/">
-              Groups
-            </Button>
             <Button variant="ghost" onClick={() => navigate('/myfiles')}>
               My Files
             </Button>
-
-            <Button variant="ghost" as="a" href="/">
-              Upload
+            <Button variant="ghost" onClick={() => navigate('/groups')}>
+              Groups
             </Button>
 
             <Button

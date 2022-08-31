@@ -8,7 +8,7 @@ import {
   useToast,
 } from '@chakra-ui/react';
 
-import { storage, db } from '../firebase';
+import { storage, firestore } from '../firebase';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { useAuth } from '../AuthContext';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -68,7 +68,7 @@ const Upload = () => {
 
     const filePath = `/${user.uid}/${currFile.name}`;
     const storageRef = ref(storage, filePath);
-    const fileDoc = doc(db, `${user.uid}/${currFile.name}`);
+    const fileDoc = doc(firestore, `${user.uid}/${currFile.name}`);
 
     const fileSnapshot = await getDoc(fileDoc);
 
@@ -108,6 +108,7 @@ const Upload = () => {
       filePath: `/${user.uid}/${currFile.name}`,
       fileURL: fileURL,
       fileDate: serverTimestamp(),
+      fileType: currFile.type,
     };
 
     setDoc(fileDoc, fileData)
