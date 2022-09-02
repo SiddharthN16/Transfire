@@ -1,6 +1,6 @@
 import { Flex, Stack, Heading, Center, Text } from '@chakra-ui/react';
-import Upload from './Upload';
-import Card from './Card';
+import PersonalUpload from './PersonalUpload';
+import FileCard from './FileCard';
 
 import { useAuth } from '../AuthContext';
 import { useState, useEffect } from 'react';
@@ -27,7 +27,7 @@ const Files = () => {
       <Center mt={8}>
         <Heading size={['xl', 'xl', 'xl', '2xl']}>Upload Files</Heading>
       </Center>
-      <Upload />
+      <PersonalUpload />
       <Center>
         <Heading mt={4} size={['2xl', '2xl', '2xl', '3xl']}>
           My Files
@@ -49,7 +49,7 @@ const Files = () => {
           </Flex>
 
           {cards?.map(data => (
-            <Card
+            <FileCard
               fileName={data.fileName}
               fileSize={data.fileSize}
               filePath={data.filePath}
