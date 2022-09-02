@@ -13,7 +13,7 @@ import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { useAuth } from '../AuthContext';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 
-const Upload = () => {
+const GroupUpload = () => {
   const { user } = useAuth();
   const toast = useToast();
   const [fileState, setFileState] = useState(false);
@@ -158,4 +158,4 @@ const Upload = () => {
   );
 };
 
-export default Upload;
+export default GroupUpload;

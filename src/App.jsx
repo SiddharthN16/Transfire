@@ -5,7 +5,6 @@ import Header from './components/Header';
 import Login from './components/auth/Login';
 import Signup from './components/auth/Signup';
 import Home from './components/Home';
-import Test from './components/Test';
 import AuthRoute from './components/auth/AuthRoute';
 import Files from './components/Files';
 import Groups from './components/Groups';
@@ -21,7 +20,6 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/test" element={<Test />} />
             <Route
               path="/myfiles"
               element={
