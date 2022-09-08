@@ -8,6 +8,7 @@ import Home from './components/Home';
 import AuthRoute from './components/auth/AuthRoute';
 import Files from './components/Files';
 import Groups from './components/Groups';
+import GroupFiles from './components/GroupFiles';
 
 import { AuthProvider } from './AuthContext';
 function App() {
@@ -33,6 +34,14 @@ function App() {
               element={
                 <AuthRoute>
                   <Groups />
+                </AuthRoute>
+              }
+            />
+            <Route
+              path="/groups/:groupId"
+              element={
+                <AuthRoute>
+                  <GroupFiles />
                 </AuthRoute>
               }
             />

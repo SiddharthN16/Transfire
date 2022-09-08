@@ -8,12 +8,15 @@ import {
   useToast,
 } from '@chakra-ui/react';
 
+import { useParams } from 'react-router-dom';
+
 import { storage, firestore } from '../firebase';
 import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
 import { useAuth } from '../AuthContext';
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 const GroupUpload = () => {
+  const { groupId } = useParams();
   const { user } = useAuth();
   const toast = useToast();
   const [fileState, setFileState] = useState(false);
@@ -66,9 +69,9 @@ const GroupUpload = () => {
   const uploadFile = async currFile => {
     if (!currFile) return;
 
-    const filePath = `/${user.uid}/${currFile.name}`;
+    const filePath = `/${groupId}/${currFile.name}`;
     const storageRef = ref(storage, filePath);
-    const fileDoc = doc(firestore, `${user.uid}/${currFile.name}`);
+    const fileDoc = doc(firestore, `${groupId}/${currFile.name}`);
 
     const fileSnapshot = await getDoc(fileDoc);
 
@@ -91,7 +94,7 @@ const GroupUpload = () => {
         () => {
           getDownloadURL(uploadTask.snapshot.ref)
             .then(fileURL => {
-              setFileData(fileDoc, currFile, fileURL);
+              setFileData(fileDoc, currFile, filePath, fileURL);
             })
             .catch(err => {
               showToast('error', err.code);
@@ -101,14 +104,15 @@ const GroupUpload = () => {
     }
   };
 
-  const setFileData = (fileDoc, currFile, fileURL) => {
+  const setFileData = (fileDoc, currFile, filePath, fileURL) => {
     const fileData = {
       fileName: currFile.name,
       fileSize: currFile.size,
-      filePath: `/${user.uid}/${currFile.name}`,
+      filePath: filePath,
       fileURL: fileURL,
       fileDate: serverTimestamp(),
       fileType: currFile.type,
+      userPosted: user.uid,
     };
 
     setDoc(fileDoc, fileData)

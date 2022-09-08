@@ -3,13 +3,10 @@ import {
   Box,
   Stack,
   Center,
-  Container,
   Heading,
   Text,
   Button,
-  Divider,
   Input,
-  Toast,
   useToast,
   Wrap,
   WrapItem,
@@ -18,7 +15,6 @@ import {
   ModalOverlay,
   ModalContent,
   ModalHeader,
-  ModalFooter,
   ModalBody,
   ModalCloseButton,
   useDisclosure,
@@ -27,12 +23,14 @@ import {
   useBoolean,
 } from '@chakra-ui/react';
 
+import { Link as RouterLink } from 'react-router-dom';
 import { firestore, db, storage } from '../firebase';
 import { useState, useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
 import { set, ref, push, update, child, get, onValue } from 'firebase/database';
 import { useAuth } from '../AuthContext';
 import GroupCard from './GroupCard';
+import Test from './Test';
 
 import { AiOutlineUsergroupAdd } from 'react-icons/ai';
 import Card from './FileCard';
@@ -60,20 +58,16 @@ const Groups = () => {
 
   useEffect(() => {
     const getUserGroups = async () => {
-      const groupInfo = await onValue(
-        ref(db, `users/${user.uid}/groups`),
-        snapshot => {
-          const groupData = snapshot.val();
+      await onValue(ref(db, `users/${user.uid}/groups`), snapshot => {
+        const groupData = snapshot.val();
 
-          if (groupData) {
-            const groupKeys = Object.keys(groupData);
-            console.log(groupData[groupKeys[0]]);
-            setGroupCards(
-              groupKeys.map(groups => ({ id: groups, ...groupData[groups] }))
-            );
-          }
+        if (groupData) {
+          const groupKeys = Object.keys(groupData);
+          setGroupCards(
+            groupKeys.map(groups => ({ id: groups, ...groupData[groups] }))
+          );
         }
-      );
+      });
     };
     getUserGroups();
   }, [user.uid]);
@@ -87,9 +81,6 @@ const Groups = () => {
 
     const groupPath = `groups/${groupCode}/users`;
     updateDatabase(groupPath, user.uid);
-
-    // const userPath = `users/${user.uid}/groups`;
-    // updateDatabase(userPath, groupCode);
 
     set(ref(db, `groups/${groupCode}/`), {
       groupName: groupName,
@@ -107,19 +98,20 @@ const Groups = () => {
   const handleJoin = e => {
     e.preventDefault();
 
-    get(child(ref(db), `groups/${joinCode}/users`))
+    get(child(ref(db), `groups/${joinCode}/`))
       .then(snapshot => {
         if (!snapshot.exists()) {
           showToast('error', 'Invalid Code');
-        } else if (snapshot.val().includes(user.uid)) {
+        } else if (snapshot.val()['users'].includes(user.uid)) {
           showToast('error', 'You Are Already in This Group');
+          setJoinMode.toggle();
+          return onClose();
         } else {
           const groupPath = `groups/${joinCode}/users`;
           updateDatabase(groupPath, user.uid);
-
-          const userPath = `users/${user.uid}/groups`;
-          updateDatabase(userPath, joinCode);
-
+          set(ref(db, `users/${user.uid}/groups/${joinCode}/`), {
+            groupName: snapshot.val()['groupName'],
+          });
           showToast('success', 'Group Joined');
           setJoinMode.toggle();
           return onClose();
@@ -155,19 +147,8 @@ const Groups = () => {
 
       <Center>
         <Wrap spacing={14} align="center" justify={'center'} mt={8}>
-          {/* <WrapItem>
-            <Center
-              as={Button}
-              cursor={'pointer'}
-              w={52}
-              h={52}
-              colorScheme="red"
-              borderRadius={8}
-            >
-              <Text>Group #1</Text>
-            </Center>
-          </WrapItem> */}
-
+          {/* GET DYNAMIC ROUTER PAGES TO WORK */}
+          {/* <RouterLink to={`/groups/${groupCards.id}`}> */}
           {groupCards?.map(data => (
             <GroupCard
               key={data.id}
@@ -176,6 +157,7 @@ const Groups = () => {
               groupUsers={data.users}
             />
           ))}
+          {/* </RouterLink> */}
 
           <WrapItem>
             <Center
@@ -249,24 +231,6 @@ const Groups = () => {
           </ModalContent>
         </Modal>
       </Center>
-
-      {/* <Center>
-        <Button onClick={handleCreate}>Create Group</Button>
-        <Text>{createCode}</Text>
-      </Center>
-      <Divider />
-      <form onSubmit={handleJoin}>
-        <Center>
-          <Stack>
-            <Input
-              type="text"
-              onChange={e => setJoinCode(e.currentTarget.value)}
-              isRequired
-            />
-            <Button type="submit">Join Group</Button>
-          </Stack>
-        </Center>
-      </form> */}
     </Stack>
   );
 };

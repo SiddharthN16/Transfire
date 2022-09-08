@@ -94,14 +94,11 @@ const Navbar = () => {
                 </>
               ) : (
                 <>
-                  <MenuItem as="a" href="/">
-                    Groups
-                  </MenuItem>
                   <MenuItem onClick={() => navigate('/myfiles')}>
                     My Files
                   </MenuItem>
-                  <MenuItem as="a" href="/about">
-                    Upload
+                  <MenuItem onClick={() => navigate('/groups')}>
+                    Groups
                   </MenuItem>
                   <MenuItem as="button" onClick={handleLogout}>
                     <Box pr={2}>Sign Out</Box>
