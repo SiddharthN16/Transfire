@@ -8,6 +8,8 @@ import {
   Icon,
 } from '@chakra-ui/react';
 
+import demo from '../assets/Transfire_Demo.png';
+
 import { useAuth } from '../AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -43,8 +45,8 @@ const Home = () => {
           color="gray.900"
           _dark={{ color: 'gray.100' }}
         >
-          Welcome{' '}
-          <Text
+          Welcome to Transfire
+          {/* <Text
             display={{ base: 'block', lg: 'inline' }}
             w="full"
             bgClip="text"
@@ -56,8 +58,8 @@ const Home = () => {
                 ? `${user.displayName}`
                 : `${user.email}`
               : 'NO USER'}
-          </Text>{' '}
-          in one single place.
+          </Text>{' '} */}
+          {/* in one single place. */}
         </chakra.h1>
         <chakra.p
           px={{ base: 0, lg: 24 }}
@@ -66,9 +68,9 @@ const Home = () => {
           color="gray.600"
           _dark={{ color: 'gray.300' }}
         >
-          Hellonext is a feature voting software where you can allow your users
-          to vote on features, publish roadmap, and complete your customer
-          feedback loop.
+          Transfire is a quick and simple way to transfer files between devices
+          or sharing files with friends. Transfire is a lightweight tool to make
+          quick file transfers, NOT to permanently store files.
         </chakra.p>
         <Stack
           direction={{ base: 'column', sm: 'row' }}
@@ -104,8 +106,8 @@ const Home = () => {
           w="full"
           rounded="lg"
           shadow="2xl"
-          src="https://kutty.netlify.app/hero.jpg"
-          alt="Hellonext feedback boards software screenshot"
+          src={demo}
+          alt="Transfire Demo Screenshot"
         />
       </Box>
     </Box>
